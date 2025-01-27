@@ -6,6 +6,7 @@
 - [Hoch Hochkeppel](https://github.com/mhochk)
 - [Min Ren](https://github.com/renmin)
 - [Sohum Chatterjee](https://github.com/sohchatt)
+- [Xiaobin Cui](https://github.com/benjycui)
 
 ## Status of this Document
 
@@ -35,7 +36,7 @@ their web content in the side panel.
 The side panel is a new feature in Microsoft Edge that allows the user to view
 additional information about the current page or browse side-by-side. The side
 panel is a new way for the user to interact with the web. The side panel
-currently does not allow developers to control the appearance of their web
+currently does not allow developers to control the appearance and behavior of their web
 content in the side panel. The side panel API will allow developers to control
 their web content in the side panel.
 
@@ -47,22 +48,44 @@ The goals of the side panel API are:
 
 - To provide a way for developers to allow their web application to be promoted
   as a side-by-side web application.
-- To provide a way for developers to control their web application appearance
-  on the side panel.
+- To provide a way for developers to detect whether their web application is rendered in side panel, so that they can optimize appearance and behavior of  web application
+  in the side panel.
 
 ## Non-Goals
 
 The side panel API is not intended to be used for:
 
-- Displaying a web application in a side panel that is not of the same origin.
+- Allowing a site to declare a side panel app of a different origin (e.g. contoso.com cannot declare a side panel app for fabrikam.com).
+- Installing a web application to side panel.
+  - Browser should provide a way to allow users to install web applications to side panel.
+  - If a developer wants to install a web application to side panel, they may consider using [Web Install API](https://github.com/MicrosoftEdge/MSEdgeExplainers/blob/main/WebInstall/explainer.md).
 - Granting additional capabilities to a web application.
   - If a developer wants to render in a side panel with additional capabilities, they may consider using an Extension. See [chrome.sidePanel](https://developer.chrome.com/docs/extensions/reference/sidePanel/) and [Extensions in the Microsoft Edge sidebar](https://learn.microsoft.com/en-us/microsoft-edge/extensions-chromium/developer-guide/sidebar).
 
 ## Use Cases
 
 The side panel API is intended to be used by web applications that want to
-provide a side-by-side experience. The browsers can promote the web application
-that supports the side panel API as a side-by-side web application. The browser
+provide a side-by-side experience.
+Here are several use cases that the side panel API enables:
+
+### Providing side-panel-only experience
+
+By letting web applications detect being rendered and set side panel width, they can provide optimized user experiences in side panel, e.g., side panel might not provide omnibox and back/forward button, so web applications need to provide other way to navigate around.
+
+Users visit the same domain in tab and side panel, but the side-panel-only experience is provided for better experience in side panel.
+
+![Side panel experience](side-panel-experience.png)
+
+### Promoting the web application
+
+The browser can promote the web application
+that supports the side panel API as a side-by-side web application.
+
+![Promotion](promotion.png)
+
+### Pinning the web application
+
+The browser
 can also provide a way for the user to pin the web application to the side panel
 so that the user can easily access the web application as a side-by-side web
 application.
@@ -83,19 +106,34 @@ via CSS or JavaScript.
 
 ```css
 @media all and (display-mode: side-panel) {
-  /* Styling for when in the side panel. */
+  /* Styling for when in the side panel only. */
 }
 ```
 
 ```js
 if (window.matchMedia('(display-mode: side-panel)').matches) {
-  // The web application is being displayed in the side panel.
+  // The web application is being specifically displayed in the side panel.
 }
 ```
 
 And when display mode is surfaced generically via request headers, it will
 be detectable there as well (see [crbug.com/1174843](https://crbug.com/1174843),
-[Display Mode Client Hint](https://github.com/WICG/manifest-incubations/blob/gh-pages/display_mode-client-hint.md))
+[Display Mode Client Hint](https://github.com/WICG/manifest-incubations/blob/gh-pages/display_mode-client-hint.md)). This means servers can redirect users to other sites then.
+
+> #### NOTE
+> Developers can set the default width of side panel with `side_panel.preferred_width`, this means that the width of side panel is arbitrary. But under most circumstances, side panel might be a narrow-width window. It is recommended to detect windows' width if these styles or behaviors are not side panel only.
+> 
+> ```css
+> @media all and (max-width: 380px) {
+>   /* Styling for when in narrow-width window. */
+> }
+> ```
+> 
+> ```js
+> if (window.matchMedia('(max-width: 380px)').matches) {
+>   // The web application is being displayed in narrow-width window.
+> }
+> ```
 
 #### Independent Declarations for Side Panel and OS Installation
 
